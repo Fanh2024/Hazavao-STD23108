@@ -15,9 +15,9 @@ public class OpenAiService {
     private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
     private final OkHttpClient client = new OkHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
-
     private final String apiKey;
 
+    // 🔑 Injection sécurisée via @Value
     public OpenAiService(@Value("${openai.api.key}") String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("Missing OpenAI API key. Did you set OPENAI_API_KEY env var?");
@@ -52,7 +52,9 @@ public class OpenAiService {
             Map<?, ?> result = objectMapper.readValue(response.body().string(), Map.class);
             List<?> choices = (List<?>) result.get("choices");
 
-            if (choices.isEmpty()) return "Tsy misy valiny avy amin'ny OpenAI.";
+            if (choices == null || choices.isEmpty()) {
+                return "Tsy misy valiny avy amin'ny OpenAI.";
+            }
 
             Map<?, ?> messageMap = (Map<?, ?>) ((Map<?, ?>) choices.get(0)).get("message");
             return messageMap.get("content").toString().trim();
