@@ -19,6 +19,9 @@ public class OpenAiService {
     private final String apiKey;
 
     public OpenAiService(@Value("${openai.api.key}") String apiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalArgumentException("Missing OpenAI API key. Did you set OPENAI_API_KEY env var?");
+        }
         this.apiKey = apiKey;
     }
 
@@ -43,12 +46,15 @@ public class OpenAiService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new RuntimeException("OpenAI API error: " + response.body().string());
+                throw new RuntimeException("OpenAI API error: " + response.code() + " - " + response.body().string());
             }
 
             Map<?, ?> result = objectMapper.readValue(response.body().string(), Map.class);
-            var choices = (List<?>) result.get("choices");
-            var messageMap = (Map<?, ?>) ((Map<?, ?>) choices.get(0)).get("message");
+            List<?> choices = (List<?>) result.get("choices");
+
+            if (choices.isEmpty()) return "Tsy misy valiny avy amin'ny OpenAI.";
+
+            Map<?, ?> messageMap = (Map<?, ?>) ((Map<?, ?>) choices.get(0)).get("message");
             return messageMap.get("content").toString().trim();
         }
     }
